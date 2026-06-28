@@ -46,6 +46,7 @@ def main() -> None:
     config = load_config()
     enabled_games = [g for g in config["games"] if g.get("enabled", True)]
     poll_interval = config.get("poll_interval", 5)
+    stop_on_game_exit = config.get("stop_on_game_exit", True)
 
     print("OBS に接続中...")
     try:
@@ -73,8 +74,11 @@ def main() -> None:
                         break
             else:
                 if active_game["exe"].lower() not in running:
-                    print(f"[終了] {active_game['name']} が終了しました → リプレイバッファ停止")
-                    stop_replay_buffer(client)
+                    if stop_on_game_exit:
+                        print(f"[終了] {active_game['name']} が終了しました → リプレイバッファ停止")
+                        stop_replay_buffer(client)
+                    else:
+                        print(f"[終了] {active_game['name']} が終了しました → リプレイバッファはそのまま")
                     active_game = None
 
         except Exception as e:

@@ -3,6 +3,7 @@
   "obs_port": 4455,
   "obs_password": "your_password_here",
   "poll_interval": 5,
+  "stop_on_game_exit": true,
   "games": [
     {
       "name": "Apex Legends",
