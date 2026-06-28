@@ -2,11 +2,9 @@ import json
 import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
-from pathlib import Path
 
 from find_game import get_processes
-
-CONFIG_PATH = Path(__file__).parent / "config.json"
+from utils import CONFIG_PATH
 
 
 def load_config() -> dict:

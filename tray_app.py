@@ -1,5 +1,4 @@
 import subprocess
-import sys
 import threading
 import time
 from pathlib import Path
@@ -19,8 +18,7 @@ from setup_startup import disable as startup_disable
 from setup_startup import enable as startup_enable
 from setup_startup import get_bat_path
 from settings_window import open_settings_async
-
-CONFIG_PATH = Path(__file__).parent / "config.json"
+from utils import CONFIG_PATH
 
 monitoring = False
 obs_client = None
@@ -123,8 +121,25 @@ def on_quit(icon, item) -> None:
     icon.stop()
 
 
+def needs_setup() -> bool:
+    if not CONFIG_PATH.exists():
+        return True
+    try:
+        cfg = load_config(str(CONFIG_PATH))
+        return not cfg.get("obs_password")
+    except Exception:
+        return True
+
+
 def main() -> None:
     global _icon_ref, config
+
+    if needs_setup():
+        from setup_wizard import SetupWizard
+        completed = SetupWizard().run()
+        if not completed:
+            return
+
     config = load_config(str(CONFIG_PATH))
 
     icon = pystray.Icon(

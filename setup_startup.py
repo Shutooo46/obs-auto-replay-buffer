@@ -2,6 +2,8 @@ import sys
 import os
 from pathlib import Path
 
+from utils import BASE_DIR
+
 STARTUP_FOLDER = Path(os.path.expandvars(r"%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"))
 BAT_NAME = "obs-auto-replay-buffer.bat"
 
@@ -10,17 +12,16 @@ def get_bat_path() -> Path:
     return STARTUP_FOLDER / BAT_NAME
 
 
-def get_script_dir() -> Path:
-    return Path(__file__).parent.resolve()
-
-
 def enable() -> None:
-    script_dir = get_script_dir()
-    bat_content = (
-        "@echo off\n"
-        f'cd /d "{script_dir}"\n'
-        "pythonw tray_app.py\n"
-    )
+    if getattr(sys, "frozen", False):
+        exe_path = Path(sys.executable)
+        bat_content = f'start "" "{exe_path}"\n'
+    else:
+        bat_content = (
+            "@echo off\n"
+            f'cd /d "{BASE_DIR}"\n'
+            "pythonw tray_app.py\n"
+        )
     bat_path = get_bat_path()
     bat_path.write_text(bat_content, encoding="utf-8")
     print(f"自動常駐を有効にしました。")

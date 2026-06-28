@@ -4,8 +4,10 @@ import sys
 import psutil
 import obsws_python as obs
 
+from utils import CONFIG_PATH
 
-def load_config(path: str = "config.json") -> dict:
+
+def load_config(path: str = str(CONFIG_PATH)) -> dict:
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
