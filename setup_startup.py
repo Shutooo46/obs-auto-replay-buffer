@@ -19,7 +19,7 @@ def enable() -> None:
     bat_content = (
         "@echo off\n"
         f'cd /d "{script_dir}"\n'
-        "pythonw main.py\n"
+        "pythonw tray_app.py\n"
     )
     bat_path = get_bat_path()
     bat_path.write_text(bat_content, encoding="utf-8")
