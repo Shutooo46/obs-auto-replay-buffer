@@ -1,0 +1,49 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 をセットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 依存ライブラリをインストール
+        run: pip install -r requirements.txt
+
+      - name: PyInstaller でビルド
+        run: |
+          pyinstaller --noconsole --onedir `
+            --name "obs-auto-replay-buffer" `
+            --hidden-import "pystray._win32" `
+            tray_app.py
+
+      - name: zip に圧縮
+        run: |
+          Compress-Archive -Path dist\obs-auto-replay-buffer\* `
+            -DestinationPath obs-auto-replay-buffer.zip
+
+      - name: GitHub Release を作成して zip をアップロード
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          files: obs-auto-replay-buffer.zip
+          body: |
+            ## ダウンロード・使い方
+
+            1. `obs-auto-replay-buffer.zip` をダウンロードして解凍
+            2. `obs-auto-replay-buffer.exe` をダブルクリック
+            3. 初回起動時にOBSのWebSocketパスワードを入力して完了！
+
+            ### ゲームの追加方法
+            タスクバー右下のアイコンを右クリック → ゲーム設定
