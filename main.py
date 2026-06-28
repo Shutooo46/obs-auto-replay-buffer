@@ -36,6 +36,24 @@ def stop_replay_buffer(client: obs.ReqClient) -> None:
         client.stop_replay_buffer()
 
 
+def get_obs_game_exes(client: obs.ReqClient) -> list[dict]:
+    """OBSのゲームキャプチャソースからexe名とソース名を取得する"""
+    try:
+        inputs = client.get_input_list().inputs
+        games = []
+        for inp in inputs:
+            if inp.get("inputKind") == "game_capture":
+                settings = client.get_input_settings(inp["inputName"]).input_settings
+                window = settings.get("window", "")
+                if window:
+                    exe = window.split(":")[0]
+                    if exe:
+                        games.append({"name": inp["inputName"], "exe": exe})
+        return games
+    except Exception:
+        return []
+
+
 def connect_to_obs(config: dict) -> obs.ReqClient:
     return obs.ReqClient(
         host=config["obs_host"],
