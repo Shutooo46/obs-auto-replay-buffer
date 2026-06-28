@@ -11,6 +11,34 @@ SYSTEM_PROCESSES = {
     "runtimebroker.exe", "backgroundtaskhost.exe", "applicationframehost.exe",
     "startmenuexperiencehost.exe", "searchhost.exe", "widgets.exe",
     "textinputhost.exe", "systemsettings.exe", "lockapp.exe",
+    # Windowsゲームバー・キャプチャ関連
+    "gamebarftserver.exe", "gamebar.exe", "gamebarftsever.exe",
+    "gameinputsvc.exe", "xboxpcapp.exe", "broadcastbandwidthtest.exe",
+    # Steam関連
+    "steam.exe", "steamservice.exe", "steamwebhelper.exe",
+    "gameoverlayui.exe", "gameoverlayui64.exe",
+    # Epic Games関連
+    "epicgameslauncher.exe", "epicwebhelper.exe", "eosoverlayrenderer-win64-shipping.exe",
+    # EA / Origin関連
+    "eadesktop.exe", "eabackgroundservice.exe", "easteamproxy.exe",
+    "origin.exe", "originclientservice.exe",
+    # Battle.net関連
+    "battle.net.exe", "battlenet.exe",
+    # Riot Games関連
+    "riotclientservices.exe", "riotclientux.exe", "riotclientuxrender.exe",
+    # OBS関連
+    "obs64.exe", "obs32.exe",
+    # Discord関連
+    "discord.exe", "discordptb.exe", "discordcanary.exe",
+    # NVIDIA関連
+    "nvidia share.exe", "nvcontainer.exe", "nvdisplay.container.exe",
+    "nvoawrappercache.exe", "nvtelemetrycontainer.exe", "nvspcaps64.exe",
+    "nvspcaps.exe", "nvwmi64.exe", "nvxdsync.exe", "nvsphelper64.exe",
+    # AMD関連
+    "amdow.exe", "radeoninstaller.exe", "amddvr.exe", "amdrsserv.exe",
+    # その他常駐系
+    "razer synapse.exe", "rzsd.exe",
+    "anticheatexpert.exe",
 }
 
 

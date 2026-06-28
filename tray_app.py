@@ -1,15 +1,13 @@
-import subprocess
 import threading
 import time
-from pathlib import Path
 
 from PIL import Image, ImageDraw
 import pystray
 from pystray import MenuItem as Item
 
-from find_game import SYSTEM_PROCESSES
 from main import (
     connect_to_obs,
+    get_obs_game_exes,
     get_running_exe_names,
     load_config,
     start_replay_buffer,
@@ -27,9 +25,6 @@ config: dict = {}
 active_game = None
 _icon_ref: pystray.Icon | None = None
 
-prev_processes: set[str] = set()
-pending_dialog_exes: set[str] = set()
-
 
 def make_icon(active: bool) -> Image.Image:
     color = (0, 184, 148) if active else (99, 110, 114)
@@ -45,39 +40,8 @@ def update_icon() -> None:
     _icon_ref.title = f"OBS Auto Replay Buffer - {'監視中' if monitoring else '停止中'}"
 
 
-def check_new_processes(running: set[str]) -> None:
-    global prev_processes, config
-
-    known_exes = {g["exe"].lower() for g in config.get("games", [])}
-    ignored_exes = {e.lower() for e in config.get("ignored", [])}
-
-    new_exes = running - prev_processes
-    prev_processes = running.copy()
-
-    for exe in new_exes:
-        if exe in known_exes or exe in ignored_exes:
-            continue
-        if exe in SYSTEM_PROCESSES:
-            continue
-        if exe in pending_dialog_exes:
-            continue
-        pending_dialog_exes.add(exe)
-        threading.Thread(target=_show_dialog, args=(exe,), daemon=True).start()
-
-
-def _show_dialog(exe_name: str) -> None:
-    from add_game_dialog import show_add_game_dialog
-    try:
-        show_add_game_dialog(exe_name)
-        config.update(load_config(str(CONFIG_PATH)))
-    finally:
-        pending_dialog_exes.discard(exe_name)
-
-
 def monitor_loop() -> None:
-    global active_game, obs_client, monitoring, prev_processes
-
-    first_cycle = True
+    global active_game, obs_client, monitoring
 
     while monitoring:
         try:
@@ -86,18 +50,23 @@ def monitor_loop() -> None:
 
             running = get_running_exe_names()
 
-            if first_cycle:
-                prev_processes = running.copy()
-                first_cycle = False
-            else:
-                check_new_processes(running)
+            # OBSのゲームキャプチャソースから取得（特定ウィンドウモード）
+            obs_games = get_obs_game_exes(obs_client)
 
-            enabled_games = [g for g in config["games"] if g.get("enabled", True)]
+            # config.jsonの手動リスト
+            manual_games = [g for g in config.get("games", []) if g.get("enabled", True)]
+
+            # 両方を合わせてexeをキーにしたdict（手動リストが優先）
+            all_games: dict[str, dict] = {g["exe"].lower(): g for g in manual_games}
+            for g in obs_games:
+                if g["exe"].lower() not in all_games:
+                    all_games[g["exe"].lower()] = g
+
             stop_on_exit = config.get("stop_on_game_exit", True)
 
             if active_game is None:
-                for game in enabled_games:
-                    if game["exe"].lower() in running:
+                for exe_lower, game in all_games.items():
+                    if exe_lower in running:
                         active_game = game
                         start_replay_buffer(obs_client)
                         if _icon_ref:
@@ -124,12 +93,11 @@ def monitor_loop() -> None:
 
 
 def start_monitoring(icon=None, item=None) -> None:
-    global monitoring, obs_client, config, prev_processes
+    global monitoring, obs_client, config
     if monitoring:
         return
     config = load_config(str(CONFIG_PATH))
     obs_client = None
-    prev_processes = set()
     monitoring = True
     threading.Thread(target=monitor_loop, daemon=True).start()
     update_icon()
@@ -189,7 +157,7 @@ def main() -> None:
             Item("監視を開始", start_monitoring, enabled=lambda item: not monitoring),
             Item("監視を停止", stop_monitoring, enabled=lambda item: monitoring),
             pystray.Menu.SEPARATOR,
-            Item("ゲーム設定", open_settings_async),
+            Item("ゲーム設定（手動登録）", open_settings_async),
             pystray.Menu.SEPARATOR,
             Item("Windows起動時に自動起動", toggle_startup, checked=is_startup_enabled),
             pystray.Menu.SEPARATOR,
