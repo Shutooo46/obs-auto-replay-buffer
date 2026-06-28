@@ -36,6 +36,20 @@ def stop_replay_buffer(client: obs.ReqClient) -> None:
         client.stop_replay_buffer()
 
 
+def _extract_exe_from_window(window: str) -> str:
+    """OBSのwindowフィールドからexe名を取り出す。
+    フォーマット例:
+      [r5apex_dx12.exe]:Apex Legends:class
+      r5apex_dx12.exe:Apex Legends:class
+      Apex Legends:class:r5apex_dx12.exe
+    """
+    for part in window.split(":"):
+        cleaned = part.strip("[]").strip()
+        if cleaned.lower().endswith(".exe"):
+            return cleaned
+    return ""
+
+
 def get_obs_game_exes(client: obs.ReqClient) -> list[dict]:
     """OBSのゲームキャプチャソースからexe名とソース名を取得する"""
     try:
@@ -46,7 +60,7 @@ def get_obs_game_exes(client: obs.ReqClient) -> list[dict]:
                 settings = client.get_input_settings(inp["inputName"]).input_settings
                 window = settings.get("window", "")
                 if window:
-                    exe = window.split(":")[0]
+                    exe = _extract_exe_from_window(window)
                     if exe:
                         games.append({"name": inp["inputName"], "exe": exe})
         return games
