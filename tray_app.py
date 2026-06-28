@@ -18,6 +18,7 @@ from main import (
 from setup_startup import disable as startup_disable
 from setup_startup import enable as startup_enable
 from setup_startup import get_bat_path
+from settings_window import open_settings_async
 
 CONFIG_PATH = Path(__file__).parent / "config.json"
 
@@ -134,8 +135,9 @@ def main() -> None:
             Item("監視を開始", start_monitoring, enabled=lambda item: not monitoring),
             Item("監視を停止", stop_monitoring, enabled=lambda item: monitoring),
             pystray.Menu.SEPARATOR,
+            Item("ゲーム設定", open_settings_async),
+            pystray.Menu.SEPARATOR,
             Item("Windows起動時に自動起動", toggle_startup, checked=is_startup_enabled),
-            Item("config.jsonを開く", open_config),
             pystray.Menu.SEPARATOR,
             Item("終了", on_quit),
         ),
