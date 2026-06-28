@@ -15,4 +15,5 @@ DEFAULT_CONFIG: dict = {
     "poll_interval": 5,
     "stop_on_game_exit": True,
     "games": [],
+    "ignored": [],
 }
