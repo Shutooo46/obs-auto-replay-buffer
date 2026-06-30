@@ -51,10 +51,11 @@ def _extract_exe_from_window(window: str) -> str:
 
 
 def get_obs_game_exes(client: obs.ReqClient) -> list[dict]:
-    """OBSのゲームキャプチャソースからexe名とソース名を取得する"""
+    """OBSのゲームキャプチャソースからexe名・ソース名・所属シーン名を取得する"""
     try:
+        # ゲームキャプチャソースのexe名を収集
         inputs = client.get_input_list().inputs
-        games = []
+        source_to_exe: dict[str, str] = {}
         for inp in inputs:
             if inp.get("inputKind") == "game_capture":
                 settings = client.get_input_settings(inp["inputName"]).input_settings
@@ -62,7 +63,31 @@ def get_obs_game_exes(client: obs.ReqClient) -> list[dict]:
                 if window:
                     exe = _extract_exe_from_window(window)
                     if exe:
-                        games.append({"name": inp["inputName"], "exe": exe})
+                        source_to_exe[inp["inputName"]] = exe
+
+        # 各シーンを走査してどのソースがどのシーンにあるか調べる
+        source_to_scene: dict[str, str] = {}
+        try:
+            scenes = client.get_scene_list().scenes
+            for scene in scenes:
+                scene_name = scene["sceneName"]
+                try:
+                    items = client.get_scene_item_list(scene_name).scene_items
+                    for item in items:
+                        source_name = item.get("sourceName", "")
+                        if source_name in source_to_exe:
+                            source_to_scene[source_name] = scene_name
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        games = []
+        for source_name, exe in source_to_exe.items():
+            game: dict = {"name": source_name, "exe": exe}
+            if source_name in source_to_scene:
+                game["scene"] = source_to_scene[source_name]
+            games.append(game)
         return games
     except Exception:
         return []

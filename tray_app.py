@@ -40,6 +40,23 @@ def update_icon() -> None:
     _icon_ref.title = f"OBS Auto Replay Buffer - {'監視中' if monitoring else '停止中'}"
 
 
+def _activate_game(game: dict) -> None:
+    global active_game
+    active_game = game
+    if "scene" in game:
+        try:
+            obs_client.set_current_program_scene(game["scene"])
+        except Exception:
+            pass
+    start_replay_buffer(obs_client)
+    if _icon_ref:
+        scene_info = f" → シーン「{game['scene']}」に切替" if "scene" in game else ""
+        _icon_ref.notify(
+            f"{game['name']} を検出しました{scene_info}",
+            "リプレイバッファ開始",
+        )
+
+
 def monitor_loop() -> None:
     global active_game, obs_client, monitoring
 
@@ -62,18 +79,23 @@ def monitor_loop() -> None:
                 if g["exe"].lower() not in all_games:
                     all_games[g["exe"].lower()] = g
 
+            # 優先順位リスト（indexが小さいほど優先度高）
+            priority_order = [exe.lower() for exe in config.get("priority_order", [])]
+
+            def get_priority(exe_lower: str) -> int:
+                try:
+                    return priority_order.index(exe_lower)
+                except ValueError:
+                    return len(priority_order)
+
             stop_on_exit = config.get("stop_on_game_exit", True)
 
             if active_game is None:
-                for exe_lower, game in all_games.items():
+                # 優先度順に並べて最初に見つかったゲームを起動
+                sorted_games = sorted(all_games.items(), key=lambda x: get_priority(x[0]))
+                for exe_lower, game in sorted_games:
                     if exe_lower in running:
-                        active_game = game
-                        start_replay_buffer(obs_client)
-                        if _icon_ref:
-                            _icon_ref.notify(
-                                f"{game['name']} を検出しました",
-                                "リプレイバッファ開始",
-                            )
+                        _activate_game(game)
                         break
             else:
                 if active_game["exe"].lower() not in running:
@@ -85,6 +107,14 @@ def monitor_loop() -> None:
                                 "リプレイバッファ停止",
                             )
                     active_game = None
+                else:
+                    # アクティブゲームより高優先度のゲームが起動したら切り替え
+                    active_priority = get_priority(active_game["exe"].lower())
+                    for exe_lower, game in all_games.items():
+                        if exe_lower in running and exe_lower != active_game["exe"].lower():
+                            if get_priority(exe_lower) < active_priority:
+                                _activate_game(game)
+                                break
 
         except Exception:
             obs_client = None
