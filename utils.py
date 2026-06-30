@@ -16,4 +16,5 @@ DEFAULT_CONFIG: dict = {
     "stop_on_game_exit": True,
     "games": [],
     "ignored": [],
+    "priority_order": [],
 }
